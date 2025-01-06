@@ -1,3 +1,5 @@
+// Ilie Dumitru (modificari partial)
+
 #include "polynomial.hpp"
 
 int Polynomial::GetDegree() const
@@ -10,10 +12,7 @@ Polynomial &Polynomial::operator=(const Polynomial &other)
     if (this == &other)
         return *this;
 
-    int degree_other = other.GetDegree();
-    this->coefficients.resize(degree_other + 1);
-    for (int i = 0; i <= degree_other; i++)
-        this->coefficients[i] = other.coefficients[i];
+    this->coefficients = other.coefficients;
     return *this;
 };
 
@@ -22,22 +21,20 @@ Polynomial operator-(const Polynomial &p, const Polynomial &q)
     int degree_p = p.GetDegree(), degree_q = q.GetDegree();
     int smallest_degree = std::min(degree_p, degree_q);
     int largest_degree = std::max(degree_p, degree_q);
-    Polynomial r(std::vector<double>(largest_degree + 1));
+    Polynomial r(std::vector<FiniteField>(largest_degree + 1));
 
     for (int i = 0; i <= smallest_degree; i++)
-        r.coefficients[i] = p.coefficients[i] - q.coefficients[i];
+        r[i] = p[i] - q[i];
 
     if (degree_p > degree_q)
         for (int i = smallest_degree + 1; i <= largest_degree; i++)
-            r.coefficients[i] = p.coefficients[i];
+            r[i] = p[i];
     else
         for (int i = smallest_degree + 1; i <= largest_degree; i++)
-            r.coefficients[i] = q.coefficients[i];
+            r[i] = -q[i];
 
-    int degree_r = r.GetDegree();
-    while (degree_r > 0 && r.coefficients[degree_r] == 0)
-        degree_r--;
-    r.coefficients.resize(degree_r + 1);
+    while (!r.coefficients.empty() && r.coefficients.back() == 0)
+        r.coefficients.pop_back();
 
     return r;
 };
@@ -47,17 +44,17 @@ Polynomial operator+(const Polynomial &p, const Polynomial &q)
     int degree_p = p.GetDegree(), degree_q = q.GetDegree();
     int smallest_degree = std::min(degree_p, degree_q);
     int largest_degree = std::max(degree_p, degree_q);
-    Polynomial r(std::vector<double>(largest_degree + 1));
+    Polynomial r(std::vector<FiniteField>(largest_degree + 1));
 
     for (int i = 0; i <= smallest_degree; i++)
-        r.coefficients[i] = p.coefficients[i] + q.coefficients[i];
+        r[i] = p[i] + q[i];
 
     if (degree_p > degree_q)
         for (int i = smallest_degree + 1; i <= largest_degree; i++)
-            r.coefficients[i] = p.coefficients[i];
+            r[i] = p[i];
     else
         for (int i = smallest_degree + 1; i <= largest_degree; i++)
-            r.coefficients[i] = q.coefficients[i];
+            r[i] = q[i];
 
     return r;
 }
@@ -65,11 +62,11 @@ Polynomial operator+(const Polynomial &p, const Polynomial &q)
 Polynomial operator*(const Polynomial &p, const Polynomial &q)
 {
     int degree_p = p.GetDegree(), degree_q = q.GetDegree(), degree_r = degree_p + degree_q;
-    Polynomial r(std::vector<double>(degree_r + 1));
+    Polynomial r(std::vector<FiniteField>(degree_r + 1));
 
     for (int i = 0; i <= degree_p; i++)
         for (int j = 0; j <= degree_q; j++)
-            r.coefficients[i + j] += p.coefficients[i] * q.coefficients[j];
+			r[i + j] += p[i] * q[j];
 
     return r;
 };
@@ -78,18 +75,20 @@ std::pair<Polynomial, Polynomial> operator/(const Polynomial &p, const Polynomia
 {
     int degree_p = p.GetDegree(), degree_q = q.GetDegree();
     int degree_remainder = degree_p;
-    Polynomial quotient(std::vector<double>(degree_p - degree_q + 1));
+    int i;
+    Polynomial quotient(std::vector<FiniteField>(degree_p - degree_q + 1));
     Polynomial remainder = p;
 
     while (degree_remainder >= degree_q)
     {
-        std::vector<double> aux(degree_remainder - degree_q + 1);
-        aux[degree_remainder - degree_q] = remainder.coefficients[degree_remainder] / q.coefficients[degree_q];
+        FiniteField coef = remainder.coefficients[degree_remainder] / q.coefficients[degree_q];
 
-        Polynomial aux_polynomial(aux);
-        quotient = quotient + aux_polynomial;
-        remainder = remainder - (q * aux_polynomial);
+        quotient[degree_remainder - degree_q] = coef;
 
+        for (i = 0; i <= degree_q; ++i)
+			remainder[degree_remainder - degree_q + i] -= coef * q[i];
+		while (!remainder.coefficients.empty() && remainder.coefficients.back() == 0)
+			remainder.coefficients.pop_back();
         degree_remainder = remainder.GetDegree();
     }
 
@@ -101,9 +100,19 @@ std::ostream &operator<<(std::ostream &out, const Polynomial &p)
     int degree_p = p.GetDegree();
     for (int i = degree_p; i >= 0; i--)
     {
-        out << p.coefficients[i] << " * x^" << i;
+        out << p[i] << " * x^" << i;
         if (i > 0)
             out << " + ";
     }
     return out;
+}
+
+FiniteField& Polynomial::operator[](int i)
+{
+	return coefficients[i];
+}
+
+const FiniteField& Polynomial::operator[](int i) const
+{
+	return coefficients[i];
 }
