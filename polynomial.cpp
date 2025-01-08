@@ -50,11 +50,18 @@ Polynomial operator+(const Polynomial &p, const Polynomial &q)
         r[i] = p[i] + q[i];
 
     if (degree_p > degree_q)
-        for (int i = smallest_degree + 1; i <= largest_degree; i++)
+    {
+		for (int i = smallest_degree + 1; i <= largest_degree; i++)
             r[i] = p[i];
+	}
     else
-        for (int i = smallest_degree + 1; i <= largest_degree; i++)
+    {
+		for (int i = smallest_degree + 1; i <= largest_degree; i++)
             r[i] = q[i];
+	}
+
+	while (!r.coefficients.empty() && r.coefficients.back() == 0)
+		r.coefficients.pop_back();
 
     return r;
 }
@@ -115,4 +122,34 @@ FiniteField& Polynomial::operator[](int i)
 const FiniteField& Polynomial::operator[](int i) const
 {
 	return coefficients[i];
+}
+
+Polynomial operator*(const Polynomial &p, FiniteField f)
+{
+	Polynomial q(p.coefficients);
+	for (FiniteField& x : q.coefficients)
+		x *= f;
+	while (!q.coefficients.empty() && q.coefficients.back() == 0)
+		q.coefficients.pop_back();
+	return q;
+}
+
+Polynomial& Polynomial::operator*=(FiniteField f)
+{
+	for(FiniteField& x : coefficients)
+		x*=f;
+	while (!coefficients.empty() && coefficients.back() == 0)
+		coefficients.pop_back();
+	return *this;
+}
+
+FiniteField Polynomial::operator()(FiniteField x)
+{
+	FiniteField res=0, xp=1;
+	for(FiniteField c : coefficients)
+	{
+		res+=c*xp;
+		xp*=x;
+	}
+	return res;
 }

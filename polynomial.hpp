@@ -10,7 +10,7 @@
 
 class Polynomial
 {
-private:
+public:
     std::vector<FiniteField> coefficients;
 
 public:
@@ -24,6 +24,11 @@ public:
     friend std::ostream &operator<<(std::ostream &, const Polynomial &);
     FiniteField& operator[](int i);
     const FiniteField& operator[](int i) const;
+    friend Polynomial operator*(const Polynomial &, FiniteField);
+    Polynomial& operator*=(FiniteField);
+    FiniteField operator()(FiniteField);
 };
+
+#include "polynomial.cpp"
 
 #endif
