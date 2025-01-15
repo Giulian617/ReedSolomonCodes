@@ -29,6 +29,4 @@ public:
     FiniteField operator()(FiniteField);
 };
 
-#include "polynomial.cpp"
-
 #endif
